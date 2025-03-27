@@ -81,6 +81,7 @@
 //! * `serialize`: `serde` support.
 //! * `arbitrary`: `arbitrary` support.
 //! * `bincode2`" `bincode@2.0.0-rc.3` support.
+//! * `parity-scale`: `parity-scale-codec@3.*` support.
 #[cfg(feature = "arbitrary")]
 use arbitrary::Arbitrary;
 #[cfg(feature = "bincode2")]
@@ -90,6 +91,8 @@ use serde::{
     ser::{SerializeSeq, Serializer},
     Deserialize, Serialize,
 };
+#[cfg(feature = "parity-scale")]
+use parity_scale_codec::{Decode, Encode};
 
 use core::iter;
 use core::mem;
@@ -151,6 +154,7 @@ macro_rules! nonempty {
         decode_bounds = "T: Decode + 'static",
     )
 )]
+#[cfg_attr(feature = "parity-scale", derive(Encode, Decode))]
 #[derive(Clone, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct NonEmpty<T> {
     pub head: T,
@@ -1308,6 +1312,26 @@ mod tests {
             tail.extend(last);
             assert_eq!(ne, NonEmpty { head: *head, tail });
             Ok(())
+        }
+    }
+
+    #[cfg(feature = "parity-scale")]
+    mod parity_scale {
+        use crate::NonEmpty;
+        use parity_scale_codec::{Decode, Encode};
+
+        #[derive(Debug, PartialEq, Eq, Encode, Decode)]
+        struct SimpleStruct {
+            a: i32,
+            b: i32,
+        }
+
+        #[test]
+        fn test_parity_scale_encode_decode() {
+            let ne = NonEmpty::from((SimpleStruct { a: 1, b: 2 }, vec![]));
+            let encoded = ne.encode();
+            let decoded = NonEmpty::<SimpleStruct>::decode(&mut &encoded[..]).unwrap();
+            assert_eq!(ne, decoded);
         }
     }
 }
