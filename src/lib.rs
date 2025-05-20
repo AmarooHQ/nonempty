@@ -313,6 +313,20 @@ impl<T> NonEmpty<T> {
         self.tail.pop()
     }
 
+    /// Remove an element at position index within the vector.
+    /// 
+    /// # Panics
+    /// 
+    /// Panics if the list has less than 2 elements or if index >= len.
+    pub fn remove(&mut self, index: usize) -> Option<T> {
+        assert!(self.len() > 1, "vector length is less than two");
+        if index == 0 {
+            Some(mem::replace(&mut self.head, self.tail.remove(0)))
+        } else {
+            Some(self.tail.remove(index - 1))
+        }
+    }
+
     /// Inserts an element at position index within the vector, shifting all elements after it to the right.
     ///
     /// # Panics
@@ -1229,6 +1243,30 @@ mod tests {
         let mut numbers = nonempty![3, 2, 1];
         numbers.sort();
         assert_eq!(numbers, nonempty![1, 2, 3]);
+    }
+
+    #[test]
+    fn test_remove_from_head() {
+        let mut numbers = nonempty![1, 2, 3];
+        assert_eq!(numbers.remove(0), Some(1));
+        assert_eq!(numbers, nonempty![2, 3]);
+    }
+
+    #[test]
+    fn test_remove_from_tail() {
+        let mut numbers = nonempty![1, 2, 3];
+        assert_eq!(numbers.remove(1), Some(2));
+        assert_eq!(numbers, nonempty![1, 3]);
+
+        assert_eq!(numbers.remove(1), Some(3));
+        assert_eq!(numbers, nonempty![1]);
+    }
+
+    #[should_panic = "vector length is less than two"]
+    #[test]
+    fn test_remove_with_len_one() {
+        let mut numbers = nonempty![1];
+        numbers.remove(0);
     }
 
     #[cfg(feature = "serialize")]
