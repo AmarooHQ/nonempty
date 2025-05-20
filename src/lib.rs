@@ -319,7 +319,9 @@ impl<T> NonEmpty<T> {
     /// 
     /// Panics if the list has less than 2 elements or if index >= len.
     pub fn remove(&mut self, index: usize) -> Option<T> {
-        assert!(self.len() > 1, "vector length is less than two");
+        if self.len() < 2 {
+            return None;
+        }
         if index == 0 {
             Some(mem::replace(&mut self.head, self.tail.remove(0)))
         } else {
@@ -1262,11 +1264,10 @@ mod tests {
         assert_eq!(numbers, nonempty![1]);
     }
 
-    #[should_panic = "vector length is less than two"]
     #[test]
     fn test_remove_with_len_one() {
         let mut numbers = nonempty![1];
-        numbers.remove(0);
+        assert!(numbers.remove(0).is_none());
     }
 
     #[cfg(feature = "serialize")]
